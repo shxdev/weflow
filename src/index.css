@@ -3,29 +3,79 @@
     top:0px;
     left: 0px;
     display: flex;
+    flex-flow:column nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+}
+.container.main.parent{
+    order:1;
+    flex-grow: 1;
+
+    display: flex;
     flex-flow:row nowrap;
     justify-content: flex-start;
     align-items: stretch;
 }
-.container.left{
+.container.main.left{
     order:1;
-    border-right:1px solid #252526;
-    flex-grow: 1;
-    width:10px;
-    box-shadow: 0px 0px 5px 0px #252526;
-    background-color: #252526;
+    border-right:1px solid #3A3F41;
+    background-color: #4A4C4E;
     color:#CCCCCC;
+
+    width:200px;
+    min-width: 50px;
+    max-width: 300px;
 }
-.container.center{
+.container.main.center{
     order:2;
-    flex-grow: 2;
-    background-color: lightgray;
-}
-.container.right{
-    order:3;
-    border-left:1px solid #252526;
     flex-grow: 1;
-    box-shadow: 0px 0px 5px 0px #252526;
-    background-color: #252526;
+    /* box-shadow: 0px 0px 5px 0px #4A4C4E inset; */
+
+    display: flex;
+    flex-flow:column nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+}
+.container.main.center>.canvas{
+    order:1;
+    flex-grow: 1;
+
+    position: relative;
+    overflow: auto;
+}
+.container.main.center>.canvas>div{
+    position: absolute;
+    background:linear-gradient(90deg,rgba(0, 0, 0, 0.05) 1px,transparent 0),
+               linear-gradient(rgba(0, 0, 0, 0.05)  1px,transparent 0);
+    background-size: 25px 25px;
+    -moz-background-size: 25px 25px;
+    -webkit-background-size: 25px 25px;
+    background-position: 0px 0px,0px 0px;
+    
+    min-width:2000px;
+    min-height:2000px;
+
+}
+.container.main.center>.info{
+    order:2;
+    background-color: antiquewhite;
+    height:200px;
+    display:none;
+}
+
+.container.main.right{
+    order:3;
+    border-left:1px solid #3A3F41;
+    background-color: #4A4C4E;
     color:#CCCCCC;
+
+    width:200px;
+    min-width: 50px;
+    max-width: 300px;
+}
+.container.bottom{
+    order:2;
+    height:20px;
+    background-color: #4A4C4E;
+    border-top:1px solid #3A3F41;
 }
