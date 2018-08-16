@@ -1,0 +1,31 @@
+.main-container{
+    position: absolute;
+    top:0px;
+    left: 0px;
+    display: flex;
+    flex-flow:row nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+}
+.container.left{
+    order:1;
+    border-right:1px solid #252526;
+    flex-grow: 1;
+    width:10px;
+    box-shadow: 0px 0px 5px 0px #252526;
+    background-color: #252526;
+    color:#CCCCCC;
+}
+.container.center{
+    order:2;
+    flex-grow: 2;
+    background-color: lightgray;
+}
+.container.right{
+    order:3;
+    border-left:1px solid #252526;
+    flex-grow: 1;
+    box-shadow: 0px 0px 5px 0px #252526;
+    background-color: #252526;
+    color:#CCCCCC;
+}
