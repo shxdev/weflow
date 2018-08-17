@@ -30,6 +30,32 @@
         }
         return ret;
     };
+    Util.widthAndHeightStatus = function (target) {
+        const style = window.getComputedStyle(target);
+        let isMaxWidth = false;
+        let isMinWidth = false;
+        let isMaxHeight = false;
+        let isMinHeight = false;
+        if (this.int(style["width"]) >= this.int(style["max-width"], Infinity)) {//最大宽度
+            isMaxWidth = true;
+            isMinWidth = false;
+        }
+        if (this.int(style["width"]) <= this.int(style["min-width"], 0)) {//最小宽度
+            isMaxWidth = false;
+            isMinWidth = true;
+        }
+        if (this.int(style["height"]) >= this.int(style["max-height"], Infinity)) {//最大高度
+            isMaxHeight = true;
+            isMinHeight = false;
+        }
+        if (this.int(style["height"]) <= this.int(style["min-height"], 0)) {//最小高度
+            isMaxHeight = false;
+            isMinHeight = true;
+        }
+
+        return { isMaxWidth, isMinWidth, isMaxHeight, isMinHeight }
+    };
+
     module.exports=exports=Util;
 }).call(this,exports, require, module,__filename,__dirname)
 
