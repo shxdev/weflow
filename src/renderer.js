@@ -134,9 +134,15 @@ document.addEventListener("DOMContentLoaded",(event)=>{
     });
 
     // ------------------------------
+    const pointer_enemy={};
+    glob.enemies = glob.enemies||[];
     document.addEventListener("pointermove",(event)=>{
         const {clientX,clientY}=event;
         glob.pointermove(clientX,clientY);
+        if (glob.enemies.indexOf(pointer_enemy)<0){
+            glob.enemies.push(pointer_enemy);
+        }
+        pointer_enemy.center_point = { x: clientX, y: clientY};
     })
     let down_point = undefined;
     const fn_autofire=()=>{
@@ -233,6 +239,10 @@ class Battery{
         this.container=this.options && this.options.container || document.querySelector(".container.center>.canvas>div");
         this.level = this.options && this.options.level||1;
         this.level_color = ["lightgray", "lightgreen", "lightblue", "gold", "orangered"];
+        this.status="working";
+        this.fire_pre_sec = 1.5;
+        this.bullet_speed_pre_sec = 500;
+        this.fire_distance=Infinity;
         this.init();
     }
 
@@ -265,6 +275,7 @@ class Battery{
             this.center_point={x:this.pos.left+this.pos.width/2,y:this.pos.top+this.pos.height/2}
         }
         this.lookto_deg = 0;
+        this.search();
 
     }
     redraw(){
@@ -293,6 +304,10 @@ class Battery{
             angle=270+angle;
         }
         return angle;
+    }
+
+    distance(p0,p1){
+        return Math.sqrt(Math.pow(p0.x - p1.x, 2) + Math.pow(p0.y - p1.y, 2));
     }
 
     conflict(rect){
@@ -330,7 +345,30 @@ class Battery{
         }
         return angle;
     }
+    search(){
+        if(this.status==="working"){
+            const see_enemies=[];
+            (glob.enemies||[]).forEach((enemy)=>{
+                if (enemy.center_point && this.distance(this.center_point, enemy.center_point)<100){
+                    see_enemies.push(enemy);
+                }
+            });
+            if(see_enemies.length>0){
+                this.fire(see_enemies[0].center_point.x, see_enemies[0].center_point.y);
+            }
+        }
+        if(this.status==="destroy"){
+            cancelAnimationFrame(()=>{this.search()});
+        }else{
+            requestAnimationFrame(() => { this.search()});
+        }
+    }
     fire(x,y){
+        const t1=new Date().getTime();
+        if (this.last_fire_time && (t1 - this.last_fire_time) < (1000/this.fire_pre_sec)){
+            return;
+        }
+        this.last_fire_time=t1;
         this.bullets = this.bullets||[];
         const bullet=document.createElement("div");
         bullet.style["position"] = `absolute`;
@@ -364,7 +402,7 @@ class Battery{
         this.container.appendChild(bullet);
 
         const t0=new Date().getTime();
-        const speed_pre_sec = 500;
+        const speed_pre_sec = this.bullet_speed_pre_sec;
         const fn_fly=()=>{
             const t1 = new Date().getTime();
             const sec=(t1-t0)/1000;
@@ -377,7 +415,7 @@ class Battery{
             bullet.style["left"]=`${x}px`;
             bullet.style["top"] = `${y}px`;
 
-            if (distance > 800 || x < 0 || y < 0 || x > viewport_rect.width || y > viewport_rect.height){
+            if (distance > this.fire_distance || x < 0 || y < 0 || x > viewport_rect.width || y > viewport_rect.height){
                 this.container.removeChild(bullet);
                 cancelAnimationFrame(fn_fly);
             }else{
