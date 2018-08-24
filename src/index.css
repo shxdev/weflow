@@ -37,6 +37,7 @@ body{
     width:200px;
     min-width: 100px;
     max-width: 300px;
+    display: none;
 }
 .container.main.center{
     order:2;
@@ -53,7 +54,7 @@ body{
     flex-grow: 1;
 
     position: relative;
-    overflow: auto;
+    overflow: hidden;
 }
 .container.main.center>.canvas>div{
     position: absolute;
@@ -64,8 +65,8 @@ body{
     -webkit-background-size: 25px 25px;
     background-position: 0px 0px,0px 0px;
     
-    min-width:2000px;
-    min-height:2000px;
+    min-width:100%;
+    min-height:100%;
 
 }
 .container.main.center>.info{
@@ -84,10 +85,12 @@ body{
     width:200px;
     min-width: 100px;
     max-width: 300px;
+    display: none;
 }
 .container.bottom{
     order:2;
     height:20px;
     background-color: #4A4C4E;
     border-top:1px solid #3A3F41;
+    display:none;
 }

@@ -169,12 +169,51 @@ document.addEventListener("DOMContentLoaded",(event)=>{
     glob.b_array=[];
     let conflict_count=0
     const view_port=document.querySelector(".container.center>.canvas");
+    const view_port_canvas = document.querySelector(".container.center>.canvas>div");
     const view_port_rect=view_port.getBoundingClientRect();
-    const default_w=parseInt(Math.min(view_port_rect.width,view_port_rect.height)/20);
-    for(let i=0;i<20;i++){
+    const default_w = 23;//parseInt(Math.min(view_port_rect.width,view_port_rect.height)/20);
+    const default_space = 2;
+    const max_col = parseInt(view_port_rect.width / (default_w + default_space));
+    const max_row = parseInt(view_port_rect.height / (default_w + default_space));
+
+    // glob.gen_map(max_col,max_row);
+    // const div_valid_area=document.createElement("div");
+    // div_valid_area.style["position"] ="absolute";
+    // div_valid_area.style["left"] = "0px";
+    // div_valid_area.style["top"] = "0px";
+    // div_valid_area.style["width"] = `${max_col * (default_w+default_space)}px`;
+    // div_valid_area.style["height"] = `${max_row * (default_w + default_space)}px`;
+    // div_valid_area.style["background-color"] = "rgba(0,0,0,0.5)";
+    // div_valid_area.style["pointer-events"] = "none";
+    // view_port_canvas.appendChild(div_valid_area);
+    const div_mask_area1 = document.createElement("div");
+    const div_mask_area2 = document.createElement("div");
+    div_mask_area1.style["position"] = "absolute";
+    div_mask_area2.style["position"] = "absolute";
+
+    div_mask_area1.style["left"] = "0px";
+    div_mask_area1.style["top"] = `${max_row * (default_w + default_space)}px`;
+    div_mask_area1.style["width"] = `${view_port_rect.width}px`;
+    div_mask_area1.style["height"] = `${(default_w + default_space)*2}px`;
+    
+    div_mask_area2.style["left"] = `${max_col * (default_w + default_space)}px`;
+    div_mask_area2.style["top"] = "0px";
+    div_mask_area2.style["width"] = `${(default_w + default_space) * 2}px`;
+    div_mask_area2.style["height"] = `${max_row * (default_w + default_space)}px`;
+
+    div_mask_area1.style["background-color"] = "rgba(0,0,0,0.5)";
+    div_mask_area1.style["pointer-events"] = "none";
+    div_mask_area2.style["background-color"] = "rgba(0,0,0,0.5)";
+    div_mask_area2.style["pointer-events"] = "none";
+
+    view_port_canvas.appendChild(div_mask_area1);
+    view_port_canvas.appendChild(div_mask_area2);
+
+
+    for(let i=0;i<10;i++){
         const rect={
-            x:parseInt(Math.random()*(view_port_rect.width-default_w*2))
-            ,y:parseInt(Math.random()*(view_port_rect.height-default_w*2))
+            x: parseInt(Math.random() * max_col) * (default_w + default_space) //parseInt(Math.random()*(view_port_rect.width-default_w*2))
+            , y: parseInt(Math.random() * max_row) * (default_w + default_space) //parseInt(Math.random()*(view_port_rect.height-default_w*2))
             ,w:default_w
             ,h:default_w
         }
@@ -208,15 +247,17 @@ document.addEventListener("DOMContentLoaded",(event)=>{
 });
 
 const glob={
-    pointermove:(x,y)=>{
+    pointermove:function(x,y){
         (glob.b_array||[]).forEach((b)=>{
             b.lookto({x,y});
         });
     }
-    ,fire: (x, y) => {
+    ,fire: function(x, y) {
         (glob.b_array || []).forEach((b) => {
             b.fire( x, y );
         });
+    }
+    , gen_map: function (col,row){
     }
 }
 
