@@ -138,12 +138,34 @@ document.addEventListener("DOMContentLoaded",(event)=>{
         const {clientX,clientY}=event;
         glob.pointermove(clientX,clientY);
     })
+    let down_point = undefined;
+    const fn_autofire=()=>{
+        if (down_point){
+            glob.fire(down_point.x,down_point.y);
+            requestAnimationFrame(fn_autofire);
+        }else{
+            cancelAnimationFrame(fn_autofire);
+        }
+    }
+    document.addEventListener("pointerdown", (event) => {
+        down_point={x:event.clientX,y:event.clientY};
+        fn_autofire();
+    })
+    document.addEventListener("pointermove", (event) => {
+        if(down_point){
+            down_point = { x: event.clientX, y: event.clientY };
+        }
+    })
+    document.addEventListener("pointerup", (event) => {
+        down_point = undefined;
+    })
+
     glob.b_array=[];
     let conflict_count=0
     const view_port=document.querySelector(".container.center>.canvas");
     const view_port_rect=view_port.getBoundingClientRect();
     const default_w=parseInt(Math.min(view_port_rect.width,view_port_rect.height)/20);
-    for(let i=0;i<500;i++){
+    for(let i=0;i<20;i++){
         const rect={
             x:parseInt(Math.random()*(view_port_rect.width-default_w*2))
             ,y:parseInt(Math.random()*(view_port_rect.height-default_w*2))
@@ -166,7 +188,7 @@ document.addEventListener("DOMContentLoaded",(event)=>{
             }
         }else{
             conflict_count=0
-            glob.b_array.push(new Battery(rect))
+            glob.b_array.push(new Battery({...rect,level:parseInt(Math.random()*5+1)}))
         }
     }
     const fn_draw=()=>{
@@ -183,6 +205,11 @@ const glob={
     pointermove:(x,y)=>{
         (glob.b_array||[]).forEach((b)=>{
             b.lookto({x,y});
+        });
+    }
+    ,fire: (x, y) => {
+        (glob.b_array || []).forEach((b) => {
+            b.fire( x, y );
         });
     }
 }
@@ -204,6 +231,8 @@ class Battery{
 
         };
         this.container=this.options && this.options.container || document.querySelector(".container.center>.canvas>div");
+        this.level = this.options && this.options.level||1;
+        this.level_color = ["lightgray", "lightgreen", "lightblue", "gold", "orangered"];
         this.init();
     }
 
@@ -226,7 +255,7 @@ class Battery{
             this.eye.style["position"]=`absolute`;
             this.eye.style["width"]=`${this.rect.w/5}px`;
             this.eye.style["height"]=`${this.rect.w/5}px`;
-            this.eye.style["border-radius"]=`${this.rect.w/10+1}px`;
+            this.eye.style["border-radius"]=`${this.rect.w/10}px`;
             this.eye.style["left"]=`${offset}px`;
             this.eye.style["top"]=`${offset}px`;
             this.eye.style["background-color"]=`black`;
@@ -234,11 +263,14 @@ class Battery{
             this.container.appendChild(this.body);
             this.pos=this.body.getBoundingClientRect();
             this.center_point={x:this.pos.left+this.pos.width/2,y:this.pos.top+this.pos.height/2}
-            this.lookto_deg=0;
         }
+        this.lookto_deg = 0;
+
     }
     redraw(){
-        this.body.style["transform"]=`rotateZ(${this.lookto_deg+45}deg)`;
+        this.body.style["transform"] = `rotateZ(${this.lookto_deg + 45}deg)`;
+        let bg_color = this.level_color[this.level - 1] || this.level_color[0];
+        this.body.style["background-color"] = bg_color  ;
     }
     lookto(point){
         (async()=>{
@@ -285,5 +317,73 @@ class Battery{
             ret=(zx <= x && zy <= y);
         }
         return ret;
+    }
+    convertAngle(angle){
+        if(angle<=90){
+            return 90-angle; 
+        }else if(angle<=180){
+            return -(angle-90);
+        } else if (angle <= 270) {
+            return -(angle - 90);
+        } else if (angle <= 360) {
+            return 360-angle+90;
+        }
+        return angle;
+    }
+    fire(x,y){
+        this.bullets = this.bullets||[];
+        const bullet=document.createElement("div");
+        bullet.style["position"] = `absolute`;
+        bullet.style["width"]="2px";
+        bullet.style["height"] = "10px";
+        bullet.style["background-color"] = "black";
+        const angle=this.getAngle(this.center_point.x, this.center_point.y,x,y);
+        const converted_angle = this.convertAngle(angle);
+        bullet.style["background-color"] = this.level_color[this.level-1]||this.level_color[0];
+        bullet.style["transform"] = `rotateZ(${angle}deg)`;
+
+
+
+        const scale_x = Math.cos(converted_angle * Math.PI / 180);
+        const scale_y = -Math.sin(converted_angle * Math.PI / 180);
+        const radius = (this.rect.w / 2);
+
+        this.offset_center_point={
+            x: this.body.offsetLeft + this.body.offsetWidth / 2
+            , y: this.body.offsetTop + this.body.offsetHeight / 2
+        };
+
+        const viewport_rect=this.container.parentElement.getBoundingClientRect();
+
+        const p0_x = this.offset_center_point.x + scale_x * radius + scale_x / Math.abs(scale_x)-1;
+        const p0_y = this.offset_center_point.y + scale_y * radius + scale_y / Math.abs(scale_y)-5;
+        const p0 = { x: p0_x, y: p0_y };
+
+        bullet.style["left"] = `${p0.x}px`;
+        bullet.style["top"] = `${p0.y}px`;
+        this.container.appendChild(bullet);
+
+        const t0=new Date().getTime();
+        const speed_pre_sec = 500;
+        const fn_fly=()=>{
+            const t1 = new Date().getTime();
+            const sec=(t1-t0)/1000;
+            const distance = speed_pre_sec*sec;
+            const offset_x = Math.cos(converted_angle * Math.PI / 180) * distance;
+            const offset_y = -Math.sin(converted_angle * Math.PI / 180) * distance;
+
+            const x = p0.x + offset_x;
+            const y = p0.y + offset_y;
+            bullet.style["left"]=`${x}px`;
+            bullet.style["top"] = `${y}px`;
+
+            if (distance > 800 || x < 0 || y < 0 || x > viewport_rect.width || y > viewport_rect.height){
+                this.container.removeChild(bullet);
+                cancelAnimationFrame(fn_fly);
+            }else{
+                requestAnimationFrame(fn_fly);
+            }
+        };
+        fn_fly();
     }
 }
