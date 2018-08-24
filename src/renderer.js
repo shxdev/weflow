@@ -136,6 +136,9 @@ document.addEventListener("DOMContentLoaded",(event)=>{
     // ------------------------------
     const pointer_enemy={};
     glob.enemies = glob.enemies||[];
+    for(let i=0;i<40;i++){
+        glob.enemies.push({center_point:{x:(i+1)*50,y:100}});
+    }
     document.addEventListener("pointermove",(event)=>{
         const {clientX,clientY}=event;
         glob.pointermove(clientX,clientY);
@@ -210,7 +213,7 @@ document.addEventListener("DOMContentLoaded",(event)=>{
     view_port_canvas.appendChild(div_mask_area2);
 
 
-    for(let i=0;i<10;i++){
+    for(let i=0;i<100;i++){
         const rect={
             x: parseInt(Math.random() * max_col) * (default_w + default_space) //parseInt(Math.random()*(view_port_rect.width-default_w*2))
             , y: parseInt(Math.random() * max_row) * (default_w + default_space) //parseInt(Math.random()*(view_port_rect.height-default_w*2))
@@ -248,9 +251,9 @@ document.addEventListener("DOMContentLoaded",(event)=>{
 
 const glob={
     pointermove:function(x,y){
-        (glob.b_array||[]).forEach((b)=>{
-            b.lookto({x,y});
-        });
+        // (glob.b_array||[]).forEach((b)=>{
+        //     b.lookto({x,y});
+        // });
     }
     ,fire: function(x, y) {
         (glob.b_array || []).forEach((b) => {
@@ -284,6 +287,7 @@ class Battery{
         this.fire_pre_sec = 1.5;
         this.bullet_speed_pre_sec = 500;
         this.fire_distance=Infinity;
+        this.radar_range = 100;
         this.init();
     }
 
@@ -314,6 +318,21 @@ class Battery{
             this.container.appendChild(this.body);
             this.pos=this.body.getBoundingClientRect();
             this.center_point={x:this.pos.left+this.pos.width/2,y:this.pos.top+this.pos.height/2}
+            this.offset_center_point = { x: this.body.offsetLeft + this.body.offsetWidth / 2, y: this.body.offsetTop + this.body.offsetHeight / 2};
+        }
+        if(!this.radar){
+            this.radar=document.createElement("div");
+            this.radar.style["position"] = `absolute`;
+            this.radar.style["width"] = `${this.radar_range*2}px`;
+            this.radar.style["height"] = `${this.radar_range*2}px`;
+            this.radar.style["left"] = `${this.offset_center_point.x - this.radar_range}px`;
+            this.radar.style["top"] = `${this.offset_center_point.y - this.radar_range}px`;
+            this.radar.style["border"] = `1px solid ${this.level_color[this.level-1]||this.level_color[0]}`;
+            this.radar.style["background-color"] = `transparent`;
+            this.radar.style["opacity"] = `0.3`;
+            this.radar.style["border-radius"] = `${this.radar_range}px`;
+            this.radar.style["pointer-events"] = `none`;
+            this.container.appendChild(this.radar);
         }
         this.lookto_deg = 0;
         this.search();
@@ -390,7 +409,7 @@ class Battery{
         if(this.status==="working"){
             const see_enemies=[];
             (glob.enemies||[]).forEach((enemy)=>{
-                if (enemy.center_point && this.distance(this.center_point, enemy.center_point)<100){
+                if (enemy.center_point && this.distance(this.center_point, enemy.center_point) < this.radar_range){
                     see_enemies.push(enemy);
                 }
             });
@@ -405,6 +424,7 @@ class Battery{
         }
     }
     fire(x,y){
+        this.lookto({x,y});
         const t1=new Date().getTime();
         if (this.last_fire_time && (t1 - this.last_fire_time) < (1000/this.fire_pre_sec)){
             return;
