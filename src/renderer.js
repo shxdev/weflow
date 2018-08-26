@@ -136,213 +136,213 @@ document.addEventListener("DOMContentLoaded",(event)=>{
     // ------------------------------
     const pointer_enemy={};
     glob.enemies = glob.enemies||[];
-    for(let i=0;i<40;i++){
-        glob.enemies.push({center_point:{x:(i+1)*50,y:100}});
-    }
+    glob.enemies.push({center_point:{x:100,y:100}});
+    glob.view_port = document.querySelector(".container.center>.canvas");
+    glob.container = document.querySelector(".container.center>.canvas>div");
+    const view_port_rect = glob.view_port.getBoundingClientRect();
+    glob.max_col = parseInt(view_port_rect.width / glob.cell.w);
+    glob.max_row = parseInt(view_port_rect.height / glob.cell.h);
+    glob.b_array = [];
+
     document.addEventListener("pointermove",(event)=>{
-        const {clientX,clientY}=event;
-        glob.pointermove(clientX,clientY);
-        if (glob.enemies.indexOf(pointer_enemy)<0){
-            glob.enemies.push(pointer_enemy);
+        const { offsetX, offsetY } = event;
+        glob.point = { x: offsetX, y: offsetY };
+        glob.point_cell = { col: Math.floor(offsetX / glob.cell.w), row:Math.floor(offsetY / glob.cell.h) };
+
+        if(glob.adding_b){
+            if (event.target === glob.container ){
+                const col=Math.floor(offsetX/glob.cell.w);
+                const row = Math.floor(offsetY / glob.cell.h);
+                if (glob.adding_b.cell.col !== col || glob.adding_b.cell.row !== row){
+                    glob.adding_b.setPos({col,row});
+                }
+
+            }
         }
-        pointer_enemy.center_point = { x: clientX, y: clientY};
-    })
-    let down_point = undefined;
-    const fn_autofire=()=>{
-        if (down_point){
-            glob.fire(down_point.x,down_point.y);
-            requestAnimationFrame(fn_autofire);
-        }else{
-            cancelAnimationFrame(fn_autofire);
-        }
-    }
+    });
     document.addEventListener("pointerdown", (event) => {
-        down_point={x:event.clientX,y:event.clientY};
-        fn_autofire();
-    })
-    document.addEventListener("pointermove", (event) => {
-        if(down_point){
-            down_point = { x: event.clientX, y: event.clientY };
+        if (glob.adding_b) {
+            glob.adding_b.build();
+            glob.b_array.push(glob.adding_b);
+            glob.adding_b=undefined;
+        }else{
+            if(event.target===glob.container){
+                const { offsetX, offsetY }=event;
+                const col = Math.floor(offsetX / glob.cell.w);
+                const row = Math.floor(offsetY / glob.cell.h);
+                if (glob.b_target) glob.b_target.unselect();
+                glob.b_target=undefined;
+                for(let i=0;i<glob.b_array.length;i++){
+                    const b=glob.b_array[i];
+                    if(b.cell.col===col && b.cell.row===row){
+                        glob.b_target=b;
+                        break;
+                    }
+                }
+
+                if (glob.b_target){
+                    glob.b_target.select();
+                }
+            }
         }
-    })
-    document.addEventListener("pointerup", (event) => {
-        down_point = undefined;
-    })
+    });
 
-    glob.b_array=[];
-    let conflict_count=0
-    const view_port=document.querySelector(".container.center>.canvas");
-    const view_port_canvas = document.querySelector(".container.center>.canvas>div");
-    const view_port_rect=view_port.getBoundingClientRect();
-    const default_w = 23;//parseInt(Math.min(view_port_rect.width,view_port_rect.height)/20);
-    const default_space = 2;
-    const max_col = parseInt(view_port_rect.width / (default_w + default_space));
-    const max_row = parseInt(view_port_rect.height / (default_w + default_space));
+    document.addEventListener("keydown",(event)=>{
+        console.log(event.key);
+        if (event.key === "a" || event.key === "A" ){
+            if (!glob.adding_b){
+                glob.adding_b = new Battery({ cell: { ...glob.point_cell}});
+            }
+        } else if (event.key ==="Escape"){
+            if(glob.adding_b){
+                glob.adding_b.destory();
+                glob.adding_b=undefined;
+            }
+        }
+    });
 
-    // glob.gen_map(max_col,max_row);
-    // const div_valid_area=document.createElement("div");
-    // div_valid_area.style["position"] ="absolute";
-    // div_valid_area.style["left"] = "0px";
-    // div_valid_area.style["top"] = "0px";
-    // div_valid_area.style["width"] = `${max_col * (default_w+default_space)}px`;
-    // div_valid_area.style["height"] = `${max_row * (default_w + default_space)}px`;
-    // div_valid_area.style["background-color"] = "rgba(0,0,0,0.5)";
-    // div_valid_area.style["pointer-events"] = "none";
-    // view_port_canvas.appendChild(div_valid_area);
     const div_mask_area1 = document.createElement("div");
     const div_mask_area2 = document.createElement("div");
     div_mask_area1.style["position"] = "absolute";
     div_mask_area2.style["position"] = "absolute";
 
     div_mask_area1.style["left"] = "0px";
-    div_mask_area1.style["top"] = `${max_row * (default_w + default_space)}px`;
+    div_mask_area1.style["top"] = `${glob.max_row * glob.cell.w}px`;
     div_mask_area1.style["width"] = `${view_port_rect.width}px`;
-    div_mask_area1.style["height"] = `${(default_w + default_space)*2}px`;
+    div_mask_area1.style["height"] = `${glob.cell.h*2}px`;
     
-    div_mask_area2.style["left"] = `${max_col * (default_w + default_space)}px`;
+    div_mask_area2.style["left"] = `${glob.max_col * glob.cell.w}px`;
     div_mask_area2.style["top"] = "0px";
-    div_mask_area2.style["width"] = `${(default_w + default_space) * 2}px`;
-    div_mask_area2.style["height"] = `${max_row * (default_w + default_space)}px`;
+    div_mask_area2.style["width"] = `${glob.cell.w * 2}px`;
+    div_mask_area2.style["height"] = `${glob.max_row * glob.cell.w}px`;
 
     div_mask_area1.style["background-color"] = "rgba(0,0,0,0.5)";
     div_mask_area1.style["pointer-events"] = "none";
     div_mask_area2.style["background-color"] = "rgba(0,0,0,0.5)";
     div_mask_area2.style["pointer-events"] = "none";
 
-    view_port_canvas.appendChild(div_mask_area1);
-    view_port_canvas.appendChild(div_mask_area2);
+    glob.container.appendChild(div_mask_area1);
+    glob.container.appendChild(div_mask_area2);
 
 
-    for(let i=0;i<100;i++){
-        const rect={
-            x: parseInt(Math.random() * max_col) * (default_w + default_space) //parseInt(Math.random()*(view_port_rect.width-default_w*2))
-            , y: parseInt(Math.random() * max_row) * (default_w + default_space) //parseInt(Math.random()*(view_port_rect.height-default_w*2))
-            ,w:default_w
-            ,h:default_w
-        }
-        let conflict=false;
-        for(let n=0;n<glob.b_array.length;n++){
-            if(glob.b_array[n].conflict(rect)){
-                conflict=true;
-                break;
-            }
-        }
-        if(conflict){
-            i--;
-            conflict_count++;
-            if(conflict_count>100){
-                console.log("too many conflict!!");
-                break;
-            }
-        }else{
-            conflict_count=0
-            glob.b_array.push(new Battery({...rect,level:parseInt(Math.random()*5+1)}))
-        }
-    }
-    const fn_draw=()=>{
-        (glob.b_array||[]).forEach((b)=>{
-            b.redraw();
-        });
-        requestAnimationFrame(fn_draw);
-    };
-    fn_draw();
     // ------------------------------
 });
 
 const glob={
-    pointermove:function(x,y){
-        // (glob.b_array||[]).forEach((b)=>{
-        //     b.lookto({x,y});
-        // });
-    }
-    ,fire: function(x, y) {
-        (glob.b_array || []).forEach((b) => {
-            b.fire( x, y );
-        });
-    }
-    , gen_map: function (col,row){
-    }
+    cell:{w:25,h:25}
+    ,maps:[
+        {}
+    ]
 }
 
 class Battery{
     constructor(options){
         this.options=options;
-        this.rect={
-            x:this.options && this.options.x || 0
-            ,y:this.options && this.options.y || 0
-            ,w:this.options && this.options.w || 10
-            ,h:this.options && this.options.h || 10
-        }
-        this.rect={...this.rect,
-            left:this.rect.x
-            ,right:this.rect.x+this.rect.w
-            ,top:this.rect.y
-            ,bottom:this.rect.y+this.rect.h
-
-        };
+        this.cell=this.options.cell||{col:0,row:0};
+        this.size = this.options.size || { w_col:1,h_row:1 };
         this.container=this.options && this.options.container || document.querySelector(".container.center>.canvas>div");
         this.level = this.options && this.options.level||1;
         this.level_color = ["lightgray", "lightgreen", "lightblue", "gold", "orangered"];
-        this.status="working";
+        this.status="initing";
         this.fire_pre_sec = 1.5;
-        this.bullet_speed_pre_sec = 500;
+        this.bullet_speed_pre_sec = 100;
         this.fire_distance=Infinity;
         this.radar_range = 100;
         this.init();
+        this.setPos(this.cell);
     }
 
     init(){
         if(!this.body){
             this.body=document.createElement("div");
+            this.body.className ="Battery";
             this.body.style["position"]=`absolute`;
-            this.body.style["width"]=`${this.rect.w}px`;
-            this.body.style["height"]=`${this.rect.h}px`;
-            this.body.style["left"]=`${this.rect.x}px`;
-            this.body.style["top"]=`${this.rect.y}px`;
-            this.body.style["border"]=`1px solid black`;
-            this.body.style["border-radius"]=`${this.rect.w/2+1}px`;
             this.body.style["pointer-events"]=`none`;
+            this.body.style["background-color"] = this.level_color[this.level - 1] || this.level_color[0];
+            this.body.style["opacity"] = `0.3`;
             
-            const scale=Math.sin(45*Math.PI/180);
-            const radius=this.rect.w/2;
-            const offset=radius-scale*radius;
             this.eye=document.createElement("div");
             this.eye.style["position"]=`absolute`;
-            this.eye.style["width"]=`${this.rect.w/5}px`;
-            this.eye.style["height"]=`${this.rect.w/5}px`;
-            this.eye.style["border-radius"]=`${this.rect.w/10}px`;
-            this.eye.style["left"]=`${offset}px`;
-            this.eye.style["top"]=`${offset}px`;
             this.eye.style["background-color"]=`black`;
+            this.eye.style["pointer-events"] = `none`;
             this.body.appendChild(this.eye);
             this.container.appendChild(this.body);
-            this.pos=this.body.getBoundingClientRect();
-            this.center_point={x:this.pos.left+this.pos.width/2,y:this.pos.top+this.pos.height/2}
-            this.offset_center_point = { x: this.body.offsetLeft + this.body.offsetWidth / 2, y: this.body.offsetTop + this.body.offsetHeight / 2};
         }
         if(!this.radar){
             this.radar=document.createElement("div");
             this.radar.style["position"] = `absolute`;
-            this.radar.style["width"] = `${this.radar_range*2}px`;
-            this.radar.style["height"] = `${this.radar_range*2}px`;
-            this.radar.style["left"] = `${this.offset_center_point.x - this.radar_range}px`;
-            this.radar.style["top"] = `${this.offset_center_point.y - this.radar_range}px`;
             this.radar.style["border"] = `1px solid ${this.level_color[this.level-1]||this.level_color[0]}`;
             this.radar.style["background-color"] = `transparent`;
-            this.radar.style["opacity"] = `0.3`;
-            this.radar.style["border-radius"] = `${this.radar_range}px`;
+            // this.radar.style["opacity"] = `0.3`;
             this.radar.style["pointer-events"] = `none`;
             this.container.appendChild(this.radar);
         }
         this.lookto_deg = 0;
-        this.search();
-
     }
-    redraw(){
+    setPos(cell){
+        if (cell){
+            this.cell=cell;
+            this.rect={
+                x: this.cell.col * glob.cell.w
+                , y: this.cell.row * glob.cell.h
+                , w: this.size.w_col * glob.cell.w
+                , h: this.size.h_row * glob.cell.h
+            }
+            this.rect={...this.rect,
+                left:this.rect.x
+                ,right:this.rect.x+this.rect.w
+                ,top:this.rect.y
+                ,bottom:this.rect.y+this.rect.h
+            };
+            this.body.style["width"] = `${this.rect.w-4}px`;
+            this.body.style["height"] = `${this.rect.h-4}px`;
+            this.body.style["left"] = `${this.rect.x+1}px`;
+            this.body.style["top"] = `${this.rect.y+1}px`;
+            this.body.style["border"] = `1px solid black`;
+            this.body.style["border-radius"] = `${this.rect.w / 2 + 1}px`;
+            
+            this.pos = this.body.getBoundingClientRect();
+            this.center_point = { x: this.pos.left + this.pos.width / 2, y: this.pos.top + this.pos.height / 2 }
+            this.offset_center_point = { x: this.body.offsetLeft + this.body.offsetWidth / 2, y: this.body.offsetTop + this.body.offsetHeight / 2 };
+
+            const scale = Math.sin(45 * Math.PI / 180);
+            const radius = this.rect.w / 2;
+            const offset = radius - scale * radius;
+            this.eye.style["width"] = `${this.rect.w / 5}px`;
+            this.eye.style["height"] = `${this.rect.w / 5}px`;
+            this.eye.style["border-radius"] = `${this.rect.w / 10}px`;
+            this.eye.style["left"] = `${offset}px`;
+            this.eye.style["top"] = `${offset}px`;
+
+            this.radar.style["width"] = `${this.radar_range * 2}px`;
+            this.radar.style["height"] = `${this.radar_range * 2}px`;
+            this.radar.style["left"] = `${this.offset_center_point.x - this.radar_range}px`;
+            this.radar.style["top"] = `${this.offset_center_point.y - this.radar_range}px`;
+            this.radar.style["border-radius"] = `${this.radar_range}px`;
+        }
+    }
+    build(){
+        this.body.style["opacity"] = `1`;
+        this.radar.style["display"]="none";
+        this.status="working";
+        this.loop();
+    }
+
+    loop(){
         this.body.style["transform"] = `rotateZ(${this.lookto_deg + 45}deg)`;
         let bg_color = this.level_color[this.level - 1] || this.level_color[0];
-        this.body.style["background-color"] = bg_color  ;
+        this.body.style["background-color"] = bg_color;
+        if (this.status === "working") {
+            this.search();
+        }
+
+        if (this.status === "destroy") {
+            cancelAnimationFrame(() => { this.loop() });
+        } else {
+            requestAnimationFrame(() => { this.loop() });
+        }
     }
+
     lookto(point){
         (async()=>{
             this.lookto_deg=this.getAngle(this.center_point.x,this.center_point.y,point.x,point.y);
@@ -406,21 +406,14 @@ class Battery{
         return angle;
     }
     search(){
-        if(this.status==="working"){
-            const see_enemies=[];
-            (glob.enemies||[]).forEach((enemy)=>{
-                if (enemy.center_point && this.distance(this.center_point, enemy.center_point) < this.radar_range){
-                    see_enemies.push(enemy);
-                }
-            });
-            if(see_enemies.length>0){
-                this.fire(see_enemies[0].center_point.x, see_enemies[0].center_point.y);
+        const see_enemies=[];
+        (glob.enemies||[]).forEach((enemy)=>{
+            if (enemy.center_point && this.distance(this.center_point, enemy.center_point) < this.radar_range){
+                see_enemies.push(enemy);
             }
-        }
-        if(this.status==="destroy"){
-            cancelAnimationFrame(()=>{this.search()});
-        }else{
-            requestAnimationFrame(() => { this.search()});
+        });
+        if(see_enemies.length>0){
+            this.fire(see_enemies[0].center_point.x, see_enemies[0].center_point.y);
         }
     }
     fire(x,y){
@@ -484,5 +477,22 @@ class Battery{
             }
         };
         fn_fly();
+    }
+
+    destory(){
+        this.status="destory";
+        this.container.removeChild(this.body);
+        this.container.removeChild(this.radar);
+    }
+    unselect(){
+        if(this.info){
+            this.info.style["display"]="none";
+        }
+    }
+    select(){
+        if(!this.info){
+            this.info=document.createElement("div");
+            this.body.appendChild(this.info);
+        }
     }
 }
