@@ -480,9 +480,18 @@ class Battery{
     }
 
     destory(){
+        const pos=glob.b_array.indexOf(this);
+        if(pos>=0){
+            glob.b_array.splice(pos,1);
+        }
         this.status="destory";
-        this.container.removeChild(this.body);
+        this.body.style["transition"]= "all 0.5s ease-out";
+        this.body.style["opacity"] = `0`;
+        this.body.addEventListener("transitionend",(event)=>{
+            this.container.removeChild(this.body);
+        });
         this.container.removeChild(this.radar);
+        this.container.removeChild(this.info);
     }
     unselect(){
         if(this.info){
@@ -507,12 +516,13 @@ class Battery{
             upgrade.style["top"]=`0px`;
             upgrade.style["text-align"]=`center`;
             upgrade.style["cursor"]=`pointer`;
-            upgrade.innerHTML="&uarr;";
+            upgrade.innerHTML="&#x25B2;";
             this.info.appendChild(upgrade);
             upgrade.addEventListener("pointerdown",()=>{
                 this.level+=1;
                 this.level=this.level>5?5:this.level;
             });
+            upgrade.style["color"]=`blue`;
 
             const degrade=document.createElement("div");
             degrade.style["position"] = `absolute`;
@@ -522,11 +532,14 @@ class Battery{
             degrade.style["top"]=`0px`;
             degrade.style["text-align"]=`center`;
             degrade.style["cursor"]=`pointer`;
-            degrade.innerHTML="&darr;";
+            degrade.style["color"]=`blue`;
+            degrade.innerHTML="&#x25BC;"//"&darr;";
             this.info.appendChild(degrade);
             degrade.addEventListener("pointerdown",()=>{
                 this.level-=1;
-                this.level=this.level<1?1:this.level;
+                if(this.level<1){
+                    this.destory();
+                }
             });
 
             this.container.appendChild(this.info);
