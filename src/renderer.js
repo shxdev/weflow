@@ -492,7 +492,45 @@ class Battery{
     select(){
         if(!this.info){
             this.info=document.createElement("div");
-            this.body.appendChild(this.info);
+            this.info.style["position"] = `absolute`;
+            this.info.className="battery-info";
+            this.info.style["width"]=`${this.rect.w*2}px`;
+            this.info.style["height"]=`${this.rect.h}px`;
+            this.info.style["border"]=`1px solid black`;
+            this.info.style["left"]=`${this.body.offsetLeft-this.rect.w/2}px`;
+            this.info.style["top"]=`${this.body.offsetTop-30}px`;
+            const upgrade=document.createElement("div");
+            upgrade.style["position"] = `absolute`;
+            upgrade.style["width"]=`${this.rect.w}px`;
+            upgrade.style["height"]=`${this.rect.h}px`;
+            upgrade.style["left"]=`0px`;
+            upgrade.style["top"]=`0px`;
+            upgrade.style["text-align"]=`center`;
+            upgrade.style["cursor"]=`pointer`;
+            upgrade.innerHTML="&uarr;";
+            this.info.appendChild(upgrade);
+            upgrade.addEventListener("pointerdown",()=>{
+                this.level+=1;
+                this.level=this.level>5?5:this.level;
+            });
+
+            const degrade=document.createElement("div");
+            degrade.style["position"] = `absolute`;
+            degrade.style["width"]=`${this.rect.w}px`;
+            degrade.style["height"]=`${this.rect.h}px`;
+            degrade.style["left"]=`${this.rect.w}px`;
+            degrade.style["top"]=`0px`;
+            degrade.style["text-align"]=`center`;
+            degrade.style["cursor"]=`pointer`;
+            degrade.innerHTML="&darr;";
+            this.info.appendChild(degrade);
+            degrade.addEventListener("pointerdown",()=>{
+                this.level-=1;
+                this.level=this.level<1?1:this.level;
+            });
+
+            this.container.appendChild(this.info);
         }
+        this.info.style["display"]="unset";
     }
 }
